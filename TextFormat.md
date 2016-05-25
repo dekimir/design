@@ -352,6 +352,8 @@ such as `f32.sqrt …`, with comma-seperated operands.
 
 ## Module-level syntax
 
+Type declarations:
+
 `type $ternary of function (i32,i32,i32) : (i32)`
 
 Imports:
@@ -368,7 +370,7 @@ Exports:
 
 `export $func0 as "ThisIsFunc0"`
 
-Function definitions:
+Function definitions and local variables:
 
 ```
 function $func0($x : i32, $y : i32, $y : i32) : (f64) {
