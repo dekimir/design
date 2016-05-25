@@ -297,11 +297,14 @@ operators require explicit parentheses. The following is a table of special synt
 | ---- | ---- | ---- |
 | `block` | `{` … *label*: `}` | `{ br $a a: }`
 | `loop` | `loop` *label* `{` … `}` | `loop $a { br $a }`
-| `if` | `if` (*expr*) `{` … `}` | `if (0) { 1 }`
-| `if` | `if` (*expr*) `{` … `} else {` *expr**`}` | `if (0) { 1 } else { 2 }`
-| `br` | `br` *label* | `br $a`
-| `br_if` | `br_if` *label* `,` *expr* | `br_if $a, $x < $y`
-| `br_table` | `br_table [` *case-label* `,` … `] ,` *default-label* `,` *expr* | `br_table [$x, $y], $z, 0`
+| `if` | `if` `(` *expr* `)` `{` … `}` | `if (0) { 1 }`
+| `if` | `if` `(` *expr* `) `{` … `} else {` *expr**`}` | `if (0) { 1 } else { 2 }`
+| `br` | `br` *label* | `br $where`
+| `br` | `br` *expr* `,` *label* | `br $v, $where`
+| `br_if` | `br_if` *expr* `,` *label* | `br_if $x < $y, $where`
+| `br_if` | `br_if` *expr* `,` *condition-expr* `,` *label* | `br_if $v, $x < $y, $where`
+| `br_table` | `br_table *index-expr* `,` [` *case-label* `,` … `] ,` *default-label* | `br_table $i, [$somewhere, $or_other], $default`
+| `br_table` | `br_table *expr* `,` *index-expr* `,` [` *case-label* `,` … `] ,` *default-label* | `br_table $v, $i, [$somewhere, $or_other], $default`
 | `return` | `return` | `return`
 | `return` | `return` *expr* | `return $x`
 | `unreachable` | `unreachable` | `unreachable`
