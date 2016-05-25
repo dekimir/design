@@ -295,15 +295,15 @@ operators require explicit parentheses. The following is a table of special synt
 
 | Name | Syntax | Examples
 | ---- | ---- | ---- |
-| `block` | *label*: | `{ br $a a: }`
+| `block` | `{` … *label*: `}` | `{ br $a a: }`
 | `loop` | `loop` *label* `{` … `}` | `loop $a { br $a }`
-| `if` | `if` (*expr*) `{` *expr** `}` | `if (0) { 1 }`
-| `if` | `if` (*expr*) `{` *expr** `} else {` *expr**`}` | `if (0) { 1 } else { 2 }`
+| `if` | `if` (*expr*) `{` … `}` | `if (0) { 1 }`
+| `if` | `if` (*expr*) `{` … `} else {` *expr**`}` | `if (0) { 1 } else { 2 }`
 | `br` | `br` *label* | `br $a`
 | `br_if` | `br_if` *label* `,` *expr* | `br_if $a, $x < $y`
 | `br_table` | `br_table [` *case-label* `,` … `] ,` *default-label* `,` *expr* | `br_table [$x, $y], $z, 0`
 | `return` | `return` | `return`
-| `return` | `return *expr*` | `return $x`
+| `return` | `return` *expr* | `return $x`
 | `unreachable` | `unreachable` | `unreachable`
 
 
