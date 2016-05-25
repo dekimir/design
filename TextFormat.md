@@ -1,4 +1,4 @@
-# Text Format
+# Text Format *DRAFT*
 
 The purpose of this text format is to support:
 * View Source on a WebAssembly module, thus fitting into the Web (where every
@@ -36,7 +36,7 @@ represented as hexadecimal floating-point as specified by the C99 standard, whic
 IEEE-754-2008 section 5.12.3 also specifies. The textual format may be improved to also
 support more human-readable representations, but never at the cost of accurate representation.
 
-# Official Text Format
+# *DRAFT* Official Text Format
 
 ## Philosophy:
 
