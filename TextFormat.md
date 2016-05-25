@@ -5,26 +5,21 @@ The purpose of this text format is to support:
   source can be viewed) in a natural way.
 * Presentation in browser development tools when source maps aren't present
   (which is necessarily the case with [the Minimum Viable Product (MVP)](MVP.md)).
-* Writing WebAssembly code directly for reasons including pedagogical,
-  experimental, debugging, optimization, and testing of the spec itself.
+* Working with WebAssembly code directly for reasons including pedagogical,
+  experimental, debugging, profiling, optimization, and testing of the spec
+  itself.
 
 The text format is equivalent and isomorphic to the [binary format](BinaryEncoding.md).
 
-The text format will be standardized, but only for tooling purposes:
-* Compilers will support this format for `.S` and inline assembly.
-* Debuggers and profilers will present binary code using this textual format.
-* Browsers will not parse the textual format on regular web content in order to
-  implement WebAssembly semantics.
+The text format will be standardized, but only for tooling purposes; browsers
+will not parse the textual format on regular web content in order to implement
+WebAssembly semantics.
 
-Given that the code representation is actually an
-[Abstract Syntax Tree](AstSemantics.md), the syntax would contain nested
-statements and expressions (instead of the linear list of instructions most
-assembly languages have).
-
-There is no requirement to use JavaScript syntax; this format is not intended to
-be evaluated or translated directly into JavaScript. There may also be
+The text format is neither a subset or superset of JavaScript syntax, and it
+cannot be directly evaluated as JavaScript. Some parts of the syntax resemble
+JavaScript so that it's familiar and readable, however there are also
 substantive reasons to use notation that is different than JavaScript (for
-example, WebAssembly has a 32-bit integer type, and it should be represented
+example, WebAssembly has a 32-bit integer type, and it is represented
 in the text format, since that is the natural thing to do for WebAssembly,
 regardless of JavaScript not having such a type). On the other hand,
 when there are no substantive reasons and the options are basically
@@ -43,39 +38,386 @@ support more human-readable representations, but never at the cost of accurate r
 
 # Official Text Format
 
-WebAssembly currently doesn't have a final, official, text format. As detailed above the
-main purpose of the text format will be for human consumption, feedback from humans on
-readability will therefore factor into standardizing a text format.
+## Philosophy:
 
-There are, however, prototype syntaxes which are used to bring up WebAssembly: it's easier
-to develop using a text format than it is with a binary format, even if the ultimate
-WebAssembly format will be binary. Most of these prototypes use [s-expressions][] because they
-can easily represent expression trees and [ASTs](AstSemantics.md) (as opposed to CFGs)
-and don't have much of a syntax to speak of (avoiding syntax bikeshed discussions).
+ - Use JS-style sensibilities when there aren't reasons otherwise.
+ - It's a compiler target, not a programming language, but readability still counts.
 
-  [s-expressions]: https://en.wikipedia.org/wiki/S-expression
 
-Here are some of these prototypes. Keep in mind that these *aren't* official, and the final
-official format may look entirely different:
+## High-level summary:
 
-* [Prototype specification][] consumes an s-expression syntax.
-* [WAVM backend][] consumes compatible s-expressions.
-* [sexpr-wasm prototype][] consumes compatible s-expressions, and works closely with the [V8 prototype][].
-* [LLVM backend][] (the `CHECK:` parts of these tests) emits compatible s-expressions.
-* [ilwasm][] emits compatible s-expressions.
-* [wassembler][] consumes a different syntax, and works closely with the [V8 prototype][].
-* [binaryen][] can consume compatible s-expressions.
+ - Curly braces for function bodies, blocks, etc., `/* */`-style and `//`-style
+   comments, and whitespace is not significant. Also, no semicolons.
+   Nested `/* */`-style comments follow JavaScript's rules.
 
-  [prototype specification]: https://github.com/WebAssembly/spec/tree/master/ml-proto/test
-  [LLVM backend]: https://github.com/llvm-mirror/llvm/tree/master/test/CodeGen/WebAssembly
-  [WAVM backend]: https://github.com/AndrewScheidecker/WAVM/tree/master/Test
-  [wassembler]: https://github.com/ncbray/wassembler/tree/master/demos
-  [V8 prototype]: https://github.com/WebAssembly/v8-native-prototype
-  [ilwasm]: https://github.com/WebAssembly/ilwasm
-  [sexpr-wasm prototype]: https://github.com/WebAssembly/sexpr-wasm-prototype
-  [binaryen]: https://github.com/WebAssembly/binaryen
+ - `get_local` looks like a simple reference; `set_local` looks like an
+   assignment. Constants use a simple literal syntax. This makes wasm's most
+   frequent opcodes very concise.
+
+ - Infix syntax for arithmetic, with simple overloading. Explicit grouping via
+   parentheses. Concise and familiar with JS and others.
+
+ - Prefix syntax with comma-separated operands for all other operators. For less
+   frequent opcodes, prefer just presenting operator names, so that they're easy
+   to identify.
+
+ - Typescript-style `name : type` declarations.
+
+ - Parentheses around call arguments, eg. `call $functionname(arg, arg, arg)`,
+   and `if` conditions, eg. `if ($condition) { call $then() } else { call $else() }`,
+   because they're familiar to many people and not too intrusive.
+
+ - Put labels "where they go".
+
+
+## Examples:
+
+### Basics
+
+```
+  function $fac-opt ($a:i64) : (i64) {
+    var $x:i64
+    $x = 1
+    br_if $end, $a <s 2
+    loop $loop {
+      $x = $x * $a
+      $a = $a + -1
+      br_if $loop, $a >s 1
+    }
+  $end:
+    $x
+  }
+```
+
+(from [fac.wast](https://github.com/WebAssembly/spec/blob/master/ml-proto/test/fac.wast))
+
+The function return type has parentheses for symmetry with the parameter types,
+anticipating adding multiple return values to wasm in the future.
+
+The curly braces around the function body are not a `block` node; they are part
+of the function syntax, reflecting how function bodies in wasm are block-like.
+
+The last expression of the function body here acts as its return value. This
+works in all block-like constructs (`block`, function body, `if`, etc.)
+
+`>s` means *signed* greater-than. explicit unsigned or signed operators will be
+suffixed with 'u' or 's', respectively.
+
+The `$` sigil on user names cleanly ensures that they never collide with wasm
+keywords, present or future.
+
+
+### Linear memory addresses
+
+```
+  function $test_redundant_load () : (i32) {
+    i32.load [8,+0]
+    f32.store [5,+0], -0x1.8p0
+    i32.load [8,+0]
+  }
+```
+
+(from [memory_redundancy.wast](https://github.com/WebAssembly/spec/blob/master/ml-proto/test/memory_redundancy.wast))
+
+Addresses are printed as `[base,+offset]`. It could be shortened to `[base]` when
+there is no offset.
+
+Addresses can be followed by an optional `:align=…` for non-natural alignments.
+
+### A slightly larger example:
+
+Here's some C code:
+
+```
+  float Q_rsqrt(float number)
+  {
+      long i;
+      float x2, y;
+      const float threehalfs = 1.5F;
+
+      x2 = number * 0.5F;
+      y  = number;
+      i  = *(long *) &y;
+      i  = 0x5f3759df - (i >> 1);
+      y  = *(float *) &i;
+      y  = y * (threehalfs - (x2 * y * y));
+      y  = y * (threehalfs - (x2 * y * y));
+
+      return y;
+  }
+```
+
+Here's the corresponding LLVM wasm backend output + binaryen + slight tweaks:
+
+```
+  (func $Q_rsqrt (param $0 f32) (result f32)
+    (local $1 f32)
+    (set_local $1
+      (f32.reinterpret/i32
+        (i32.sub
+          (i32.const 1597463007)
+          (i32.shr_s
+            (i32.reinterpret/f32
+              (get_local $0))
+            (i32.const 1)))))
+    (set_local $1
+      (f32.mul
+        (get_local $1)
+        (f32.sub
+          (f32.const 1.5)
+          (f32.mul
+            (get_local $1)
+            (f32.mul
+              (get_local $1)
+              (set_local $0
+                (f32.mul
+                  (get_local $0)
+                  (f32.const 0.5))))))))
+    (f32.mul
+      (get_local $1)
+      (f32.sub
+        (f32.const 1.5)
+        (f32.mul
+          (get_local $1)
+          (f32.mul
+            (get_local $0)
+            (get_local $1)))))
+   )
+```
+
+And here's the proposed text syntax:
+
+```
+   function $Q_rsqrt ($0:f32) : (f32) {
+     var $1:f32
+     $1 = f32.reinterpret/i32 (1597463007 - ((i32.reinterpret/f32 $0) >> 1))
+     $1 = $1 * (0x1.8p0 - $1 * ($0 = $0 * 0x1p-1) * $1)
+     $1 * (0x1.8p0 - $1 * $0 * $1)
+   }
+```
+
+This shows off the compactness of infix operators with overloading. In the
+s-expression syntax, these expressions are quite awkward to read, and this
+isn't even a very big example. But the text syntax here is very short.
+
+### Labels
+
+Excerpt from labels.wast:
+
+```
+  (func $loop3 (result i32)
+    (local $i i32)
+    (set_local $i (i32.const 0))
+    (loop $exit $cont
+      (set_local $i (i32.add (get_local $i) (i32.const 1)))
+      (if (i32.eq (get_local $i) (i32.const 5))
+        (br $exit (get_local $i))
+      )
+      (get_local $i)
+    )
+  )
+```
+
+Corresponding proposed text syntax:
+
+```
+  function $loop3 () : (i32) {
+    var $i:i32
+    $i = 0
+    loop $cont {
+      $i = $i + 1
+      if ($i == 5) {
+        br $exit, $i
+      }
+    $exit:
+    }
+  }
+```
+
+Note that the curly braces are part of the `if`, rather than introducing a
+block. This reflects how `if` essentially provides `block`-like capabilities
+in the wasm binary format.
+
+### Nested blocks
+
+Label definitions, like the `$exit:` above, introduce additional blocks nested
+within the nearest `{`, without requiring their own `{`. This allows the deep
+nesting of `br_table` to be printed in a relatively flat manner:
+
+```
+  {
+    br_table [$red, $orange, $yellow, $green], $default, $index
+  $red:
+      // ...
+  $orange:
+      // ...
+  $yellow:
+      // ...
+  $green:
+      // ...
+  $default:
+  }
+```
+
+representing the following in nested form:
+
+```
+  (block $default
+    (block $green
+      (block $yellow
+        (block $orange
+          (block $red
+            (br_table [$red, $orange, $yellow, $green] $default (get_local $index))
+          )
+          // ...
+        )
+        // ...
+      )
+      // ...
+    )
+    // ...
+  )
+```
+
+`br_table`s can have large numbers of labels, so this feature allows us to
+avoid very deep nesting in many cases.
+
+Note that when a label appears just before the closing `}`, it doesn't introduce
+a new block; it just provides a name for the enclosing block's label.
+
+## Operators with special syntax
+
+As mentioned above, basic arithmetic operators use an infix notation, some
+operators require explicit parentheses. The following is a table of special syntax:
+
+
+### Control flow operators ([described here](https://github.com/WebAssembly/design/blob/master/AstSemantics.md))
+
+| Name | Syntax | Examples
+| ---- | ---- | ---- |
+| `block` | *label*: | `{ br $a a: }`
+| `loop` | `loop` *label* `{` … `}` | `loop $a { br $a }`
+| `if` | `if` (*expr*) `{` *expr** `}` | `if (0) { 1 }`
+| `if_else` | `if` (*expr*) `{` *expr** `} else {` *expr**`}` | `if (0) { 1 } else { 2 }`
+| `select` | `select` *expr*, *expr* ? *expr* | `select 1, 2 ? $x < $y`
+| `br` | `br` *label* | `br $a`
+| `br_if` | `br` *label* `,` *expr* | `br $a`, `br $a, $x < $y`
+| `br_table` | `br_table [` *case-label* `,` … `] ,` *default-label* `,` *expr* | `br_table [$x, $y], $z, 0`
+
+
+### Basic operators ([described here](https://github.com/WebAssembly/design/blob/master/AstSemantics.md#constants))
+
+| Name | Syntax | Example
+| ---- | ---- | ---- |
+| `i32.const` | … | `234`, `0xfff7`
+| `i64.const` | … | `234`, `0xfff7`
+| `f64.const` | … | `0.1p2`, `infinity`, `nan:0x789`
+| `f32.const` | … | `0.1p2`, `infinity`, `nan:0x789`
+| `get_local` | *name* | `$x + 1`
+| `set_local` | *name* `=` *expr* | `$x = 1`
+| `call` | `call` *name* `(`*expr* `,` … `)` | `call $min(0, 2)`
+| `call_import` | `call_import` *name* `(`*expr* `,` … `)` | `call_import $max(0, 2)`
+| `call_indirect` | `call_indirect` *signature-name* `[` *expr* `] (`*expr* `,` … `)` | `call_indirect $foo [1] (0, 2)`
+
+### Memory-related operators ([described here](https://github.com/WebAssembly/design/blob/master/AstSemantics.md#linear-memory-accesses))
+
+| Name | Syntax | Example
+| ---- | ---- | ---- |
+| *memory-immediate* | `[` *base-expression* `,` *offset* `]` | `[$base, 4]`
+| `i32.load8_s` | `i32.load8_s [` *base-expression* `, +` *offset-immediate* `]` | `i32.load8_s [$base, +4]`
+| `i32.load8_s` | `i32.load8_s [` *base-expression* `, +` *offset-immediate* `]:align=` *align* | `i32.load8_s [$base, +4]:align=2`
+| `i32.store8` | `i32.store8 [` *base-expression* `, +` *offset-immediate* `]`, *expr* | `i32.store8 [$base, +4], $value`
+| `i32.store8` | `i32.store8 [` *base-expression* `, +` *offset-immediate* `]:align=` *align* `,` *expr* | `i32.store8 [$base, +4]:align=2, $value`
+
+The other forms of `load` and `store` are similar.
+
+### Simple operators ([described here](AstSemantics#32-bit-integer-operators))
+
+| Name | Syntax |
+| ---- | ---- |
+| `i32.add` | … `+` …
+| `i32.sub` | … `-` …
+| `i32.mul` | … `*` …
+| `i32.div_s` | … `/s` …
+| `i32.div_u` | … `/u` …
+| `i32.rem_s` | … `%s` …
+| `i32.rem_u` | … `%u` …
+| `i32.and` | … `&` …
+| `i32.or` | … `|` …
+| `i32.xor` | … `^` …
+| `i32.shl` | … `<<` …
+| `i32.shr_u` | … `>>u` …
+| `i32.shr_s` | … `>>s` …
+| `i32.eq` | … `==` …
+| `i32.ne` | … `!=` …
+| `i32.lt_s` | … `<s` …
+| `i32.le_s` | … `<=s` …
+| `i32.lt_u` | … `<u` …
+| `i32.le_u` | … `<=u` …
+| `i32.gt_s` | … `>s` …
+| `i32.ge_s` | … `>=s` …
+| `i32.gt_u` | … `>u` …
+| `i32.ge_u` | … `>=u` …
+| `i32.eqz` | `!` …
+| `i64.add` | … `+` …
+| `i64.sub` | … `-` …
+| `i64.mul` | … `*` …
+| `i64.div_s` | … `/s` …
+| `i64.div_u` | … `/u` …
+| `i64.rem_s` | … `%s` …
+| `i64.rem_u` | … `%u` …
+| `i64.and` | … `&` …
+| `i64.or` | … `\|` …
+| `i64.xor` | … `^` …
+| `i64.shl` | … `<<` …
+| `i64.shr_u` | … `>>u` …
+| `i64.shr_s` | … `>>s` …
+| `i64.eq` | … `==` …
+| `i64.ne` | … `!=` …
+| `i64.lt_s` | … `<s` …
+| `i64.le_s` | … `<=s` …
+| `i64.lt_u` | … `<u` …
+| `i64.le_u` | … `<=u` …
+| `i64.gt_s` | … `>s` …
+| `i64.ge_s` | … `>=s` …
+| `i64.gt_u` | … `>u` …
+| `i64.ge_u` | … `>=u` …
+| `i64.eqz` | `!` …
+| `f32.add` | … `+` …
+| `f32.sub` | … `-` …
+| `f32.mul` | … `*` …
+| `f32.div` | … `/` …
+| `f32.neg` | `-` …
+| `f32.eq` | … `==` …
+| `f32.ne` | … `!=` …
+| `f32.lt` | … `<` …
+| `f32.le` | … `<=` …
+| `f32.gt` | … `>` …
+| `f32.ge` | … `>=` …
+| `f64.add` | … `+` …
+| `f64.sub` | … `-` …
+| `f64.mul` | … `*` …
+| `f64.div` | … `/` …
+| `f64.neg` | `-` …
+| `f64.eq` | … `==` …
+| `f64.ne` | … `!=` …
+| `f64.lt` | … `<` …
+| `f64.le` | … `<=` …
+| `f64.gt` | … `>` …
+| `f64.ge` | … `>=` …
+
+All other operators use their actual name in a prefix notation, such as
+`f32.sqrt …`.
+
+These operators use C/JS-style operator precedence rules, except that in order
+to correct [an old mistake](http://www.lysator.liu.se/c/dmr-on-or.html)),
+it is not valid to rely on precedence alone between a `&`, `|`, or `^` operator
+and another operator of similar precedence. Parentheses are required in such
+contexts in order to ensure that the code reads as intended.
 
 # Debug symbol integration
+
+## Debug symbol section
 
 The binary format inherently strips names from functions, locals, globals, etc,
 reducing each of these to dense indices. Without help, the text format must
@@ -83,3 +425,11 @@ therefore synthesize new names. However, as part of the [tooling](Tooling.md)
 story, a lightweight, optional "debug symbol" global section may be defined
 which associates names with each indexed entity and, when present, these names
 will be used in the text format projected from a binary WebAssembly module.
+
+## Code references
+
+In the binary format, references to locations in the code are done through
+byte offsets. In the text format, these references are represented symbolically
+with a special label syntax, prefixed by an `@` sign. These labels have no
+semantic effect, and merely serve to identify a location in the code that can
+be referred to from other sections.
