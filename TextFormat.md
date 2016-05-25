@@ -287,8 +287,9 @@ a new block; it just provides a name for the enclosing block's label.
 
 ## Operators with special syntax
 
-As mentioned above, basic arithmetic operators use an infix notation, some
-operators require explicit parentheses. The following is a table of special syntax:
+The default syntax for operators is their opcode name followed by a
+comma-separated list of operands. However, several operators have
+special syntax.
 
 
 ### Control flow operators ([described here](https://github.com/WebAssembly/design/blob/master/AstSemantics.md))
@@ -348,6 +349,31 @@ contexts in order to ensure that the code reads as intended.
 
 All other arithmetic operators use their actual name in a prefix notation,
 such as `f32.sqrt …`, with comma-seperated operands.
+
+## Module-level syntax
+
+`type $ternary of function (i32,i32,i32) : (i32)`
+
+Imports:
+
+`import "print" as $print_int from "global.PrintingStuff" typeof function (f64) : ()`
+
+Function table:
+
+`table [$func0,$func1,$func2,…]`
+
+Exports:
+
+`export memory as "memory"`
+
+`export $func0 as "ThisIsFunc0"`
+
+Function definitions:
+
+```
+function $func0($x : i32, $y : i32, $y : i32) : (f64) {
+    var $a : i32, $b : i64, $c : f32
+```
 
 # Debug symbol integration
 
