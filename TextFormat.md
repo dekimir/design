@@ -47,8 +47,11 @@ support more human-readable representations, but never at the cost of accurate r
 ## High-level summary:
 
  - Curly braces for function bodies, blocks, etc., `/* */`-style and `//`-style
-   comments, and whitespace is not significant. Also, no semicolons.
+   comments, and whitespace is not significant.
    Nested `/* */`-style comments follow JavaScript's rules.
+
+ - Explicit drop is modeled with Rust-style semicolon rules, for high fidelity
+   with the underlying language and low syntactic overhead.
 
  - `get_local` looks like a simple reference; `set_local` looks like an
    assignment. Constants use a simple literal syntax. This makes wasm's most
@@ -76,13 +79,13 @@ support more human-readable representations, but never at the cost of accurate r
 
 ```
   function $fac-opt ($a:i64) : (i64) {
-    var $x:i64
-    $x = 1
-    br_if $a <s 2, $end
+    var $x:i64;
+    $x = 1;
+    br_if($a <s 2, $end);
     loop $loop {
-      $x = $x * $a
-      $a = $a + -1
-      br_if $a >s 1, $loop
+      $x = $x * $a;
+      $a = $a + -1;
+      br_if($a >s 1, $loop);
     }
   $end:
     $x
@@ -106,6 +109,9 @@ suffixed with 'u' or 's', respectively.
 The `$` sigil on user names cleanly ensures that they never collide with wasm
 keywords, present or future.
 
+The last statement has no trailing semicolon; this indicates that its result
+value is being used as the block result value.
+
 
 ### Linear memory addresses
 
@@ -122,15 +128,15 @@ Examples:
 
 ```
   function $loads_and_stores ($ptr : i32) : (i32) {
-    var $t : i32
+    var $t : i32;
 
     // Simple cases.
-    $t = i32[$ptr]           // plain i32.load from address $ptr
-    i32[$ptr] = $t           // plain i32.store of $t to address $ptr
+    $t = i32[$ptr];           // plain i32.load from address $ptr
+    i32[$ptr] = $t;           // plain i32.store of $t to address $ptr
 
     // Various modifiers.
-    f32[$ptr,+4] = -0x1.8p0  // f32.store to address $ptr plus 4
-    i64:8s[$ptr,+17,align=1] // i64.load8_s from address $ptr plus 17 with alignment 1
+    f32[$ptr,+4] = -0x1.8p0;  // f32.store to address $ptr plus 4
+    i64:8s[$ptr,+17,align=1]; // i64.load8_s from address $ptr plus 17 with alignment 1
   }
 ```
 
@@ -199,9 +205,9 @@ And here's the proposed text syntax:
 
 ```
    function $Q_rsqrt ($0:f32) : (f32) {
-     var $1:f32
-     $1 = f32.reinterpret/i32 (1597463007 - ((i32.reinterpret/f32 $0) >> 1))
-     $1 = $1 * (0x1.8p0 - $1 * ($0 = $0 * 0x1p-1) * $1)
+     var $1:f32;
+     $1 = f32.reinterpret/i32(1597463007 - ((i32.reinterpret/f32 $0) >> 1));
+     $1 = $1 * (0x1.8p0 - $1 * ($0 = $0 * 0x1p-1) * $1);
      $1 * (0x1.8p0 - $1 * $0 * $1)
    }
 ```
@@ -232,12 +238,12 @@ Corresponding proposed text syntax:
 
 ```
   function $loop3 () : (i32) {
-    var $i:i32
-    $i = 0
+    var $i:i32;
+    $i = 0;
     loop $cont {
-      $i = $i + 1
+      $i = $i + 1;
       if ($i == 5) {
-        br $exit, $i
+        br($i, $exit);
       }
     $exit:
     }
@@ -256,7 +262,7 @@ nesting of `br_table` to be printed in a relatively flat manner:
 
 ```
   {
-    br_table $index, [$red, $orange, $yellow, $green], $default
+    br_table($index, [$red, $orange, $yellow, $green], $default);
   $red:
       // ...
   $orange:
@@ -306,16 +312,16 @@ special syntax.
 
 | Name | Syntax | Examples
 | ---- | ---- | ---- |
-| `block` | `{` … *label*: `}` | `{ br $a a: }`
-| `loop` | `loop` *label* `{` … `}` | `loop $a { br $a }`
+| `block` | `{` … *label*: `}` | `{ br($a); a: }`
+| `loop` | `loop` *label* `{` … `}` | `loop $a { br($a); }`
 | `if` | `if` `(` *condition* `)` `{` … `}` | `if (0) { 1 }`
 | `if` | `if` `(` *condition* `) `{` … `} else `{` … `}` | `if (0) { 1 } else { 2 }`
-| `br` | `br` *label* | `br $where`
-| `br` | `br` *expr* `,` *label* | `br $v, $where`
-| `br_if` | `br_if` *expr* `,` *label* | `br_if $x < $y, $where`
-| `br_if` | `br_if` *expr* `,` *condition* `,` *label* | `br_if $v, $x < $y, $where`
-| `br_table` | `br_table` *index-expr* `,` `[` *label* `,` … `]` `,` *default-label* | `br_table $i, [$somewhere, $or_other], $default`
-| `br_table` | `br_table` *expr* `,` *index-expr* `,` `[` *label* `,` … `]` `,` *default-label* | `br_table $v, $i, [$somewhere, $or_other], $default`
+| `br` | `br` `(` *label* `)` | `br($where)`
+| `br` | `br` `(` *expr* `,` *label* `)` | `br($v, $where)`
+| `br_if` | `br_if` `(` *expr* `,` *label* `)` | `br_if($x < $y, $where)`
+| `br_if` | `br_if` `(` *expr* `,` *condition* `,` *label* `)` | `br_if($v, $x < $y, $where)`
+| `br_table` | `br_table` `(` *index-expr* `,` `[` *label* `,` … `]` `,` *default-label* `)` | `br_table($i, [$somewhere, $or_other], $default)`
+| `br_table` | `br_table` `(` *expr* `,` *index-expr* `,` `[` *label* `,` … `]` `,` *default-label* `)` | `br_table($v, $i, [$somewhere, $or_other], $default)`
 | `return` | `return` | `return`
 | `return` | `return` *expr* | `return $x`
 | `unreachable` | `unreachable` | `unreachable`
