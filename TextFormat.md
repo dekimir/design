@@ -206,7 +206,7 @@ And here's the proposed text syntax:
 ```
    function $Q_rsqrt ($0:f32) : (f32) {
      var $1:f32;
-     $1 = f32.reinterpret/i32(1597463007 - ((i32.reinterpret/f32 $0) >> 1));
+     $1 = f32.reinterpret/i32(1597463007 - ((i32.reinterpret/f32($0)) >> 1));
      $1 = $1 * (0x1.8p0 - $1 * ($0 = $0 * 0x1p-1) * $1);
      $1 * (0x1.8p0 - $1 * $0 * $1)
    }
@@ -364,7 +364,7 @@ and another operator of similar precedence. Parentheses are required in such
 contexts in order to ensure that the code reads as intended.
 
 All other arithmetic operators use their actual name in a prefix notation,
-such as `f32.sqrt …`, with comma-seperated operands.
+such as `f32.sqrt(…)`, with comma-seperated operands.
 
 ## Module-level syntax
 
