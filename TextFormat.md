@@ -164,7 +164,7 @@ Here's the corresponding LLVM wasm backend output + binaryen + slight tweaks:
       (f32.mul
         (get_local $1)
         (f32.sub
-          (f32.const 1.5)
+          (f32.const 0x1.8p+0)
           (f32.mul
             (get_local $1)
             (f32.mul
@@ -172,11 +172,11 @@ Here's the corresponding LLVM wasm backend output + binaryen + slight tweaks:
               (set_local $0
                 (f32.mul
                   (get_local $0)
-                  (f32.const 0.5))))))))
+                  (f32.const 0x1p-1))))))))
     (f32.mul
       (get_local $1)
       (f32.sub
-        (f32.const 1.5)
+        (f32.const 0x1.8p+0)
         (f32.mul
           (get_local $1)
           (f32.mul
