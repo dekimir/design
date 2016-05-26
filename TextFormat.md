@@ -109,20 +109,30 @@ keywords, present or future.
 
 ### Linear memory addresses
 
+Addresses are printed as `[base,+offset,align=val]`. The offset can be omitted
+when it is zero, and the alignment can be omitted for natural alignment.
+
+Addresses are prefixed by an identifier giving the type of a load, or the
+type of the value to store, optionally followed by a colon and a number of
+bits of memory to access (for truncating stores or extending loads).
+For loads, the number of bits is followed by `s` or `u` for signed and
+unsigned.
+
+Examples:
+
 ```
-  function $test_redundant_load () : (i32) {
-    i32.load [8,+0]
-    f32.store [5,+0], -0x1.8p0
-    i32.load [8,+0]
+  function $loads_and_stores ($ptr : i32) : (i32) {
+    var $t : i32
+
+    // Simple cases.
+    $t = i32[$ptr]           // plain i32.load from address $ptr
+    i32[$ptr] = $t           // plain i32.store of $t to address $ptr
+
+    // Various modifiers.
+    f32[$ptr,+4] = -0x1.8p0  // f32.store to address $ptr plus 4
+    i64:8s[$ptr,+17,align=1] // i64.load8_s from address $ptr plus 17 with alignment 1
   }
 ```
-
-(from [memory_redundancy.wast](https://github.com/WebAssembly/spec/blob/master/ml-proto/test/memory_redundancy.wast))
-
-Addresses are printed as `[base,+offset]`. It could be shortened to `[base]` when
-there is no offset.
-
-Addresses can be followed by an optional `:align=…` for non-natural alignments.
 
 ### A slightly larger example:
 
