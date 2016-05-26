@@ -50,8 +50,9 @@ support more human-readable representations, but never at the cost of accurate r
    comments, and whitespace is not significant.
    Nested `/* */`-style comments follow JavaScript's rules.
 
- - Explicit drop is modeled with Rust-style semicolon rules, for high fidelity
-   with the underlying language and low syntactic overhead.
+ - Semicolons separate expressions inside blocks, loops, and so on. The
+   last statement in the sequence may omit its trailing semicolon to indicate
+   that its result is being used as the result value of the parent construct.
 
  - `get_local` looks like a simple reference; `set_local` looks like an
    assignment. Constants use a simple literal syntax. This makes wasm's most
