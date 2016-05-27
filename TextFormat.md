@@ -317,10 +317,10 @@ special syntax.
 | `loop` | `loop` *label* `{` … `}` | `loop $a { br($a); }`
 | `if` | `if` `(` *condition* `)` `{` … `}` | `if (0) { 1 }`
 | `if` | `if` `(` *condition* `) `{` … `} else `{` … `}` | `if (0) { 1 } else { 2 }`
-| `br` | `br` `(` *label* `)` | `br($where)`
-| `br` | `br` `(` *expr* `,` *label* `)` | `br($v, $where)`
-| `br_if` | `br_if` `(` *expr* `)` *label* | `br_if($x < $y, $where)`
-| `br_if` | `br_if` `(` *expr* `,` *condition* `)` *label* | `br_if($v, $x < $y, $where)`
+| `br` | `br` *label* | `br $where`
+| `br` | `br` `(` *expr* `)` *label* | `br($v) $where`
+| `br_if` | `br_if` `(` *expr* `)` *label* | `br_if($x < $y) $where`
+| `br_if` | `br_if` `(` *expr* `,` *condition* `)` *label* | `br_if($v, $x < $y) $where`
 | `br_table` | `br_table` `(` *index-expr* `)` `[` *label* `,` … `]` `,` *default-label* | `br_table($i) [$somewhere, $or_other], $default`
 | `br_table` | `br_table` `(` *expr* `,` *index-expr* `)` `[` *label* `,` … `]` `,` *default-label* | `br_table($v, $i) [$somewhere, $or_other], $default`
 | `return` | `return` | `return`
