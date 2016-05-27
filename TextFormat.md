@@ -263,7 +263,7 @@ nesting of `br_table` to be printed in a relatively flat manner:
 
 ```
   {
-    br_table($index, [$red, $orange, $yellow, $green], $default);
+    br_table ($index) [$red, $orange, $yellow, $green], $default;
   $red:
       // ...
   $orange:
@@ -321,8 +321,8 @@ special syntax.
 | `br` | `br` `(` *expr* `)` *label* | `br ($v) $where`
 | `br_if` | `br_if` `(` *expr* `)` *label* | `br_if ($x < $y) $where`
 | `br_if` | `br_if` `(` *expr* `,` *condition* `)` *label* | `br_if ($v, $x < $y) $where`
-| `br_table` | `br_table` `(` *index-expr* `)` `[` *label* `,` … `]` `,` *default-label* | `br_table($i) [$somewhere, $or_other], $default`
-| `br_table` | `br_table` `(` *expr* `,` *index-expr* `)` `[` *label* `,` … `]` `,` *default-label* | `br_table($v, $i) [$somewhere, $or_other], $default`
+| `br_table` | `br_table` `(` *index-expr* `)` `[` *label* `,` … `]` `,` *default-label* | `br_table ($i) [$somewhere, $or_other], $default`
+| `br_table` | `br_table` `(` *expr* `,` *index-expr* `)` `[` *label* `,` … `]` `,` *default-label* | `br_table ($v, $i) [$somewhere, $or_other], $default`
 | `return` | `return` | `return`
 | `return` | `return` *expr* | `return $x`
 | `unreachable` | `unreachable` | `unreachable`
