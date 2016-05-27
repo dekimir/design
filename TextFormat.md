@@ -82,11 +82,11 @@ support more human-readable representations, but never at the cost of accurate r
   function $fac-opt ($a:i64) : (i64) {
     var $x:i64;
     $x = 1;
-    br_if($a <s 2, $end);
+    br_if ($a <s 2) $end;
     loop $loop {
       $x = $x * $a;
       $a = $a + -1;
-      br_if($a >s 1, $loop);
+      br_if ($a >s 1) $loop;
     }
   $end:
     $x
@@ -319,10 +319,10 @@ special syntax.
 | `if` | `if` `(` *condition* `) `{` … `} else `{` … `}` | `if (0) { 1 } else { 2 }`
 | `br` | `br` `(` *label* `)` | `br($where)`
 | `br` | `br` `(` *expr* `,` *label* `)` | `br($v, $where)`
-| `br_if` | `br_if` `(` *expr* `,` *label* `)` | `br_if($x < $y, $where)`
-| `br_if` | `br_if` `(` *expr* `,` *condition* `,` *label* `)` | `br_if($v, $x < $y, $where)`
-| `br_table` | `br_table` `(` *index-expr* `,` `[` *label* `,` … `]` `,` *default-label* `)` | `br_table($i, [$somewhere, $or_other], $default)`
-| `br_table` | `br_table` `(` *expr* `,` *index-expr* `,` `[` *label* `,` … `]` `,` *default-label* `)` | `br_table($v, $i, [$somewhere, $or_other], $default)`
+| `br_if` | `br_if` `(` *expr* `)` *label* | `br_if($x < $y, $where)`
+| `br_if` | `br_if` `(` *expr* `,` *condition* `)` *label* | `br_if($v, $x < $y, $where)`
+| `br_table` | `br_table` `(` *index-expr* `)` `[` *label* `,` … `]` `,` *default-label* | `br_table($i) [$somewhere, $or_other], $default`
+| `br_table` | `br_table` `(` *expr* `,` *index-expr* `)` `[` *label* `,` … `]` `,` *default-label* | `br_table($v, $i) [$somewhere, $or_other], $default`
 | `return` | `return` | `return`
 | `return` | `return` *expr* | `return $x`
 | `unreachable` | `unreachable` | `unreachable`
