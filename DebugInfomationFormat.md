@@ -22,9 +22,9 @@ Examples: a) dynamic scoping in Lisp; b) full DWARF 4 equivalence.
 
 To allow easy stripping of debug info, all of it will go into a separate
 section.  In the binary format, this will be an unknown section inserted into
-the wasm file.  Because this new info will make the current
-[name section](BinaryEncoding.md#name-section) redundant, we propose deprecating
-the name section.
+the wasm file.  (Note that this new info doesn't make the current
+[name section](BinaryEncoding.md#name-section) redundant, because that section
+contains WebAssembly names, not source-code names.)
 
 META: How do we distinguish the debug-containing unknown section from any other
 unknown section?
